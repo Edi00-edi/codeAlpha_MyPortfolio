@@ -1,48 +1,449 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeAlpha | Music Player</title>
-    <link rel="stylesheet" href="music.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <title>Edmealem Minalu | Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #4cc9f0; 
+      --accent: #7209b7;  
+      --bg: #0d1117;     
+      --card: #161b22;
+      --text: #f0f6fc;
+      --text-dim: #8b949e;
+      --glass: rgba(255, 255, 255, 0.05);
+      --success: #00ff00;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; scroll-behavior: smooth; width: 100%; }
+
+    #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.3; pointer-events: none; }
+
+    header {
+      background: rgba(13, 17, 23, 0.95);
+      padding: 0.8rem 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--primary);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-container { display: flex; align-items: center; gap: 0.5rem; transition: 0.3s; }
+    .nav-btn {
+      background: transparent;
+      color: var(--text);
+      border: none;
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .nav-btn:hover, .active-link { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+
+    .cv-btn {
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      padding: 0.4rem 1rem;
+    }
+    .cv-btn:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); }
+
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background: var(--card);
+      min-width: 180px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+      z-index: 2000;
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      overflow: hidden;
+      right: 0;
+    }
+    .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9rem; }
+    .dropdown-content a:hover { background: var(--primary); color: black; }
+    
+    /* Toggle class for JS click control */
+    .dropdown.show-menu .dropdown-content { display: block; animation: slideIn 0.3s ease; }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .page-section { display: none; padding: 5rem 5%; max-width: 1100px; margin: 0 auto; min-height: 85vh; }
+    .page-section.active { display: block; animation: fadeIn 0.6s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .hero { display: flex; align-items: center; gap: 3rem; padding-top: 2rem; min-height: 70vh; flex-wrap: wrap; }
+    .hero-img { flex: 1; min-width: 280px; position: relative; display: flex; justify-content: center; perspective: 1000px; }
+    
+    .hero-img img { 
+      width: 100%; 
+      max-width: 350px; 
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 50%; 
+      border: 4px solid var(--primary); 
+      box-shadow: 0 0 30px rgba(76, 201, 240, 0.4);
+      transition: transform 0.1s ease-out;
+    }
+
+    .hero-text { flex: 1.5; min-width: 300px; }
+    .hero-text h1 { font-size: clamp(1.8rem, 5vw, 3.5rem); margin-bottom: 1rem; background: linear-gradient(to right, #4cc9f0, #7209b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2; }
+
+    .typing-text::after { content: "|"; animation: blink 0.7s infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; margin-top: 2rem; width: 100%; }
+    .stat-box { background: var(--glass); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--primary); }
+    .stat-number { display: block; font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); }
+
+    .featured-scroll { margin-top: 6rem; opacity: 0; transform: translateY(30px); transition: 1s all ease; }
+    .featured-scroll.reveal { opacity: 1; transform: translateY(0); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    
+    .card { 
+      background: var(--card); 
+      padding: 1.5rem; 
+      border-radius: 12px; 
+      border: 1px solid var(--glass); 
+      transition: 0.4s; 
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+    }
+    .card:hover { border-color: var(--primary); transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+    
+    .hover-detail {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--accent);
+      color: white;
+      padding: 1rem;
+      font-size: 0.85rem;
+      border-radius: 0 0 12px 12px;
+      opacity: 0;
+      transition: 0.3s;
+      pointer-events: none;
+    }
+    .card:hover .hover-detail { opacity: 1; }
+
+    .about-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+    .bullet-list { list-style: none; margin-top: 1rem;}
+    .bullet-list li { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px; }
+    .bullet-list li::before { content: "•"; color: var(--primary); font-size: 1.5rem; }
+
+    .education-item { background: var(--card); padding: 1.5rem; border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; margin-top: 1rem;}
+    .cert-link { color: var(--primary); text-decoration: none; font-weight: bold; font-size: 0.8rem; }
+
+    #contact-status { text-align: center; margin-top: 10px; font-weight: bold; color: var(--success); display: none; }
+
+    footer { background: #090c10; padding: 4rem 5%; border-top: 1px solid var(--glass); margin-top: 4rem; }
+    .footer-content { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2.5rem; }
+    .social-icons { display: flex; gap: 1rem; font-size: 1.5rem; margin-top: 1rem; }
+    .social-icons a { color: var(--text); transition: 0.3s; }
+    .social-icons a:hover { color: var(--primary); transform: scale(1.2); }
+
+    .ai-status { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #00ff00; margin-bottom: 0.5rem; }
+    .pulse { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 10px #00ff00; animation: pulse-anim 2s infinite; }
+    @keyframes pulse-anim { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+    /* MEDIA QUERIES */
+    @media (max-width: 992px) {
+      .hero { gap: 2rem; }
+    }
+
+    @media (max-width: 768px) { 
+      header { padding: 1rem; flex-direction: column; gap: 1rem; }
+      .nav-container { 
+        width: 100%; 
+        overflow-x: auto; 
+        padding-bottom: 10px; 
+        justify-content: flex-start; 
+        scrollbar-width: none; 
+      }
+      .nav-container::-webkit-scrollbar { display: none; }
+      
+      /* Only allow overflow when the dropdown is actually showing */
+      .nav-container.menu-open { overflow: visible; }
+      
+      .dropdown-content { right: auto; left: 0; position: fixed; top: 110px; }
+      .hero { flex-direction: column; text-align: center; } 
+      .hero-img img { max-width: 280px; }
+      .page-section { padding-top: 3rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="player-container">
-        <div class="music-card">
-            <div class="album-art">
-                <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400" id="track-art" alt="Album Art">
-            </div>
-            
-            <div class="track-info">
-                <h2 id="track-name">Song Title</h2>
-                <p id="track-artist">Artist Name</p>
-            </div>
+  <canvas id="bg-canvas"></canvas>
 
-            <div class="progress-container">
-                <input type="range" min="0" max="100" value="0" class="progress-bar" id="progress-bar">
-                <div class="duration-info">
-                    <span id="current-time">0:00</span>
-                    <span id="total-duration">0:00</span>
-                </div>
-            </div>
-
-            <div class="controls">
-                <button class="ctrl-btn" onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
-                <button class="play-pause" id="play-pause" onclick="togglePlay()"><i class="fas fa-play"></i></button>
-                <button class="ctrl-btn" onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
-            </div>
-
-            <div class="volume-container">
-                <i class="fas fa-volume-up"></i>
-                <input type="range" min="0" max="100" value="80" class="volume-slider" id="volume-slider">
-            </div>
+  <header>
+    <div style="font-weight: 700; font-size: 1.4rem; letter-spacing: -1px;">Edmealem<span style="color:var(--primary)"> Minalu</span></div>
+    <nav class="nav-container" id="main-nav">
+      <button class="nav-btn active-link" onclick="showPage('home', this)">Home</button>
+      <button class="nav-btn" onclick="showPage('about', this)">About & Certs</button>
+      <div class="dropdown" id="projects-dropdown">
+        <button class="nav-btn" onclick="toggleMenu(event)">Projects ▾</button>
+        <div class="dropdown-content">
+          <a href="https://edi00-edi.github.io/Airbnb-Group8-IS-Students/" target="_blank">Airbnb</a>
+          <a href="https://edi00-edi.github.io/TechNews/" target="_blank">TechNews</a>
+          <a href="#">Portal (Coming Soon)</a>
         </div>
+      </div>
+      <button class="nav-btn" onclick="showPage('skills', this)">Skills</button>
+      <a href="EdmealemMinalu-CV.pdf" target="_blank" download="Edmealem_Minalu_CV.pdf" class="nav-btn cv-btn">
+        <i class="fas fa-download"></i> CV
+      </a>
+      <button class="nav-btn" style="background:var(--primary); color:black; border-radius:20px;" onclick="showPage('contact', this)">Email Me</button>
+    </nav>
+  </header>
+
+  <section id="home" class="page-section active">
+    <div class="hero">
+      <div class="hero-img">
+        <img src="Edm.jpg" alt="Edmealem Minalu" id="hero-profile">
+      </div>
+      <div class="hero-text">
+        <div class="ai-status"><div class="pulse"></div> System Online: Ready for Innovation</div>
+        <h1>I am a <span class="typing-text" id="typewriter"></span></h1>
+        <p style="font-size: 1.1rem; color: var(--text-dim); margin-bottom: 1.5rem;">
+          Bridging the gap between complex backend logic and pixel-perfect frontends. I turn data into interactive experiences.
+        </p>
+        
+        <div class="stats-container">
+          <div class="stat-box"><span class="stat-number">5+</span><span class="stat-label">Educational Certs</span></div>
+          <div class="stat-box"><span class="stat-number">37+</span><span class="stat-label">Courses</span></div>
+          <div class="stat-box"><span class="stat-number">60%</span><span class="stat-label">Commitment</span></div>
+        </div>
+        
+        <button class="nav-btn" style="border: 1px solid var(--primary); padding: 12px 30px; margin-top: 2rem; border-radius: 30px;" onclick="document.getElementById('more-content').scrollIntoView()">Scroll to Explore ↓</button>
+      </div>
     </div>
 
-    <audio id="main-audio" src=""></audio>
+    <div id="more-content" class="featured-scroll">
+      <div style="color: var(--primary); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem;">Core Focus</div>
+      <h2 style="font-size: 2.5rem; margin-top: 0.5rem;">What I Bring To The Table</h2>
+      <div class="grid">
+        <div class="card">
+          <i class="fas fa-code" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+          <h3>Full-Stack Mastery</h3>
+          <p>Building seamless end-to-end websites with modern frameworks and robust backends.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-database" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+          <h3>Data Engineering</h3>
+          <p>Optimizing complex MySQL and MongoDB structures for high-performance data retrieval.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-network-wired" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+          <h3>Secure Networking</h3>
+          <p>Designing efficient network infrastructures with specialized knowledge in VLSM and IP routing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <script src="music.js"></script>
+  <section id="about" class="page-section">
+    <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary);">About Me</h2>
+    <div style="margin-bottom: 3rem;">
+        <p>I am an Information Systems student at Hawassa University currently pursuing a Bachelor of Science (BSc) degree. I am passionate about technology and continuously improving my knowledge in web development.</p>
+        <p>I specialize in front-end development and have experience working with HTML, CSS, and JavaScript to build responsive and user-friendly websites.</p>
+        <p>In addition, I have knowledge of MySQL for database management. During my studies, I completed approximately 37 courses that helped me build strong technical and analytical skills.</p>
+        <p>I also have basic knowledge of data analysis and computer networking. I learned networking concepts such as IP addressing and Variable Length Subnet Masking (VLSM) used for efficient network configuration in organizations and companies.</p>
+    </div>
+
+    <div class="about-details">
+      <div>
+        <h2 style="color:var(--primary); margin-bottom:1rem;">Education</h2>
+        <div class="education-item">
+            <div class="item-title">Bachelor of Science (BSc) in Information System</div>
+            <div class="item-subtitle">Hawassa University, Hawassa</div>
+            <div class="item-date">December 2023 – Present</div>
+        </div>
+      </div>
+      <div>
+        <h2 style="color:var(--primary); margin-bottom:1rem;">Top Courses</h2>
+        <ul class="bullet-list">
+          <li>SQL, MySQL, MongoDB</li>
+          <li>Internet Programming</li>
+          <li>Data Structures & Algorithms</li>
+          <li>Artificial Intelligence</li>
+          <li>Data Communication and Networking</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 style="font-size: 2rem; margin: 4rem 0 1.5rem; color: var(--primary);">Verified Credentials</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Programming Fundamentals</h3><p>Udacity Certificate</p>
+        <a href="https://www.udacity.com/certificate/e/bd6afc74-f8e9-11f0-89a0-f3b07a7b6c68" target="_blank" class="cert-link">VERIFY →</a>
+      </div>
+      <div class="card">
+        <h3>Artificial Intelligence</h3><p>Udacity Certificate</p>
+        <a href="https://www.udacity.com/certificate/e/c7c29288-f86f-11f0-8710-0308ece4c91b" target="_blank" class="cert-link">VERIFY →</a>
+      </div>
+      <div class="card">
+        <h3>Data Analysis</h3><p>Udacity Certificate</p>
+        <a href="https://www.udacity.com/certificate/e/2fdf5484-f8e6-11f0-a622-43b6189b21ef" target="_blank" class="cert-link">VERIFY →</a>
+      </div>
+      <div class="card">
+        <h3>Android Developer</h3><p>Udacity Certificate</p>
+        <a href="https://www.udacity.com/certificate/e/f0696516-f81c-11f0-9aa3-5b7b8ab04d4a" target="_blank" class="cert-link">VERIFY →</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills" class="page-section">
+    <h2 style="font-size: 2.5rem; margin-bottom: 2rem; color: var(--primary);">Core Tech Stack</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Languages</h3><p>Python, Java, PHP, C++, JS</p>
+        <div class="hover-detail">Strong Logic in C++, Automation in Python, and Enterprise logic in Java.</div>
+      </div>
+      <div class="card">
+        <h3>Frontend</h3><p>HTML5, CSS3, React, Figma</p>
+        <div class="hover-detail">Responsive UI Design & User Experience Architecting.</div>
+      </div>
+      <div class="card">
+        <h3>Database</h3><p>MySQL, MongoDB, SQL</p>
+        <div class="hover-detail">Relational & NoSQL Database Optimization and Querying.</div>
+      </div>
+      <div class="card">
+        <h3>Networking</h3><p>IP Addressing, VLSM, Routing</p>
+        <div class="hover-detail">Subnetting & Secure Network Infrastructure Management.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="page-section">
+    <h2 style="text-align:center; color:var(--primary);">Contact Me</h2>
+    <form id="portfolio-form" action="https://api.web3forms.com/submit" method="POST" style="max-width:500px; margin: 2rem auto; display:flex; flex-direction:column; gap:1.2rem;">
+      <input type="hidden" name="access_key" value="d5e01d59-50a7-4d51-b3dc-5431152e1b75">
+      <input type="text" name="name" placeholder="Full Name" required style="padding:1rem; background:var(--bg); border:1px solid var(--glass); color:var(--text); border-radius:8px;">
+      <input type="email" name="email" placeholder="Your Email" required style="padding:1rem; background:var(--bg); border:1px solid var(--glass); color:var(--text); border-radius:8px;">
+      <textarea name="message" placeholder="Write Your Message Here....." required style="padding:1rem; background:var(--bg); border:1px solid var(--glass); color:var(--text); border-radius:8px; min-height:150px;"></textarea>
+      <button type="submit" style="padding:1rem; background:var(--primary); border:none; border-radius:8px; font-weight:700; cursor:pointer; color:black;">Send Message</button>
+      <div id="contact-status">Message sent successfully!</div>
+    </form>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div>
+        <h3 style="color:var(--primary);">Contact</h3>
+        <p>✉ edmealemminahus@gmail.com</p>
+        <p>📱 +251 967520581</p>
+        <p>📍 Addis Ababa, Ethiopia</p>
+      </div>
+      <div class="social-icons">
+        <a href="https://github.com/Edi00-edi" target="_blank"><i class="fab fa-github"></i></a>
+        <a href="https://www.instagram.com/edi__min" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.linkedin.com/in/edmealem-minalu-07679a3b7" target="_blank"><i class="fab fa-linkedin"></i></a>
+        <a href="https://t.me/ediedi21" target="_blank"><i class="fab fa-telegram"></i></a>
+      </div>
+      <div>
+        <p>&copy; 2026 Edmealem Minalu.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* DROPDOWN LOGIC - FIXED FOR MOBILE SCROLL */
+    function toggleMenu(e) {
+      e.stopPropagation();
+      const drop = document.getElementById('projects-dropdown');
+      const nav = document.getElementById('main-nav');
+      drop.classList.toggle('show-menu');
+      nav.classList.toggle('menu-open');
+    }
+
+    // Close when clicking outside
+    window.addEventListener('click', () => {
+      document.getElementById('projects-dropdown').classList.remove('show-menu');
+      document.getElementById('main-nav').classList.remove('menu-open');
+    });
+
+    const textElement = document.getElementById("typewriter");
+    const phrases = ["Complete Beginner In All Of These Things","Full-Stack Developer", "Data Analyst", "UI/UX Designer"];
+    let pIdx = 0, cIdx = 0, isDel = false;
+
+    function type() {
+      const cur = phrases[pIdx];
+      textElement.textContent = isDel ? cur.substring(0, cIdx - 1) : cur.substring(0, cIdx + 1);
+      cIdx = isDel ? cIdx - 1 : cIdx + 1;
+      let speed = isDel ? 50 : 100;
+      if (!isDel && cIdx === cur.length) { speed = 2000; isDel = true; }
+      else if (isDel && cIdx === 0) { isDel = false; pIdx = (pIdx + 1) % phrases.length; speed = 500; }
+      setTimeout(type, speed);
+    }
+
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    class P {
+      constructor() { this.reset(); }
+      reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2 + 1; this.sx = Math.random() * 0.4 - 0.2; this.sy = Math.random() * 0.4 - 0.2; }
+      up() { this.x += this.sx; this.y += this.sy; if (this.x > canvas.width || this.x < 0 || this.y > canvas.height || this.y < 0) this.reset(); }
+      dr() { ctx.fillStyle = '#4cc9f0'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+    }
+    function init() { for(let i=0; i<60; i++) particles.push(new P()); }
+    function anim() { ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.up(); p.dr();}); requestAnimationFrame(anim); }
+
+    const heroImg = document.getElementById('hero-profile');
+    document.addEventListener('mousemove', (e) => {
+      const x = (window.innerWidth / 2 - e.pageX) / 30;
+      const y = (window.innerHeight / 2 - e.pageY) / 30;
+      heroImg.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+    });
+
+    window.addEventListener('scroll', () => {
+      const reveal = document.querySelector('.featured-scroll');
+      if (reveal && reveal.getBoundingClientRect().top < window.innerHeight - 100) reveal.classList.add('reveal');
+    });
+
+    function showPage(pId, btn) {
+      document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(pId).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-link'));
+      if(btn && !btn.classList.contains('cv-btn')) btn.classList.add('active-link');
+      window.scrollTo(0,0);
+    }
+
+    const form = document.getElementById('portfolio-form');
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      fetch('https://api.web3forms.com/submit', { method: 'POST', body: new FormData(form) })
+      .then(res => { if(res.ok) { 
+        document.getElementById('contact-status').style.display='block'; 
+        form.reset(); 
+        setTimeout(()=>document.getElementById('contact-status').style.display='none', 4000); 
+      }});
+    });
+
+    window.addEventListener('resize', resize);
+    resize(); init(); anim(); type();
+  </script>
 </body>
 </html>
